@@ -43,6 +43,7 @@ public class BubbleView extends AppCompatTextView {
     private int mStartX;
     private static  int default8Padding;
     private static  int default16Padding;
+    private OnLayoutChangeListener mOnLayoutChangeListener;
 
     public BubbleView(Context context) {
         this(context,null);
@@ -100,51 +101,80 @@ public class BubbleView extends AppCompatTextView {
     }
 
 
-    public void show(@NonNull View target){
+    public void show(@NonNull View target,@Nullable ViewGroup parent){
+        if (mTarget!=null){
+            mTarget.removeOnLayoutChangeListener(mOnLayoutChangeListener);
+        }
+        target.removeOnLayoutChangeListener(mOnLayoutChangeListener);
         mShowing=true;
         mTarget=target;
         setScaleX(0);
         setScaleY(0);
         setVisibility(VISIBLE);
+
        target.post(()->{
-           Rect offsetViewBound=new Rect();
-           target.getDrawingRect(offsetViewBound);
-           ViewGroup targetRoot= (ViewGroup) (target.getRootView().findViewById(android.R.id.content));
-           if (targetRoot==null){
-               targetRoot=(ViewGroup) (target.getRootView());
+
+           ViewGroup targetRoot;
+           if (parent==null){
+                targetRoot= (ViewGroup) (target.getRootView().findViewById(android.R.id.content));
+               if (targetRoot==null){
+                   targetRoot=(ViewGroup) (target.getRootView());
+               }
+           }else {
+               targetRoot=parent;
            }
-           targetRoot.offsetDescendantRectToMyCoords(target,offsetViewBound);
-           int y=offsetViewBound.top-getMeasuredHeight();
-           int tCenter=target.getMeasuredWidth()/2+offsetViewBound.left;
-           int halfPopWidth=getMeasuredWidth()/2;
-           int x=tCenter-halfPopWidth;
-           if (x<0){
-               x=0;
-           }else if (tCenter+halfPopWidth>getResources().getDisplayMetrics().widthPixels){
-               x=getResources().getDisplayMetrics().widthPixels - getMeasuredWidth();
-           }
+
 
            ViewGroup bubbleParent= (ViewGroup) getParent();
            if (bubbleParent!=null){
                bubbleParent.removeView(this);
            }
-           mArrowStartPointX=tCenter-x;
-           setPivotX(mArrowStartPointX);
-           setPivotY(getMeasuredHeight());
-           setTop(0);
-           setY(y);
-           setLeft(0);
-           setX(x);
+           rePosition(target,targetRoot);
            targetRoot.addView(this);
+           targetRoot.bringChildToFront(this);
+
            animate().setDuration(300).scaleY(1).scaleX(1).setInterpolator(new OvershootInterpolator()).start();
+           ViewGroup finalTargetRoot = targetRoot;
+           mOnLayoutChangeListener=new OnLayoutChangeListener() {
+               @Override
+               public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                   rePosition(v, finalTargetRoot);
+               }
+           };
+
+           target.addOnLayoutChangeListener(mOnLayoutChangeListener);
        });
     }
 
+    private void rePosition(View target,ViewGroup targetRoot){
+        Rect offsetViewBound=new Rect();
+        target.getDrawingRect(offsetViewBound);
+        targetRoot.offsetDescendantRectToMyCoords(target,offsetViewBound);
+        int y=offsetViewBound.top-getMeasuredHeight();
+        int tCenter=target.getMeasuredWidth()/2+offsetViewBound.left;
+        int halfPopWidth=getMeasuredWidth()/2;
+        int x=tCenter-halfPopWidth;
+        if (x<0){
+            x=0;
+        }else if (tCenter+halfPopWidth>getResources().getDisplayMetrics().widthPixels){
+            x=getResources().getDisplayMetrics().widthPixels - getMeasuredWidth();
+        }
+        mArrowStartPointX=tCenter-x;
+        setPivotX(mArrowStartPointX);
+        setPivotY(getMeasuredHeight());
+        //setTop(0);
+        setY(y);
+        //setLeft(0);
+        setX(x);
+    }
     public void hide(){
         if (!mShowing){
             return;
         }
         mShowing=false;
+        if (mTarget!=null && mOnLayoutChangeListener!=null){
+            mTarget.removeOnLayoutChangeListener(mOnLayoutChangeListener);
+        }
         animate().setDuration(200).scaleY(0)
                 .scaleX(0).
                 setInterpolator(new AnticipateInterpolator())
