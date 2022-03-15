@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BubbleView">
+        <attr name="backgroundColor" format="color"/>
+        <attr name="radius" format="dimension"/>
+        <attr name="show" format="boolean"/>
+        <attr name="tailWidth" format="dimension"/>
+        <attr name="tailHeight" format="dimension"/>
+    </declare-styleable>
+</resources>
