@@ -18,6 +18,7 @@ import android.view.animation.OvershootInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatTextView;
+import androidx.core.view.ViewCompat;
 
 public class BubbleView extends AppCompatTextView {
     private Paint mRectanglePaint;
@@ -97,6 +98,7 @@ public class BubbleView extends AppCompatTextView {
         }
         mRectanglePaint.setColor(mBackgroundColor);
         mArrowPaint.setColor(mBackgroundColor);
+        ViewCompat.setTranslationZ(this,50);
 
     }
 
@@ -129,7 +131,7 @@ public class BubbleView extends AppCompatTextView {
            if (bubbleParent!=null){
                bubbleParent.removeView(this);
            }
-           rePosition(target,targetRoot);
+           rePosition(target,targetRoot,parent);
            targetRoot.addView(this);
            targetRoot.bringChildToFront(this);
 
@@ -138,7 +140,7 @@ public class BubbleView extends AppCompatTextView {
            mOnLayoutChangeListener=new OnLayoutChangeListener() {
                @Override
                public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                   rePosition(v, finalTargetRoot);
+                   rePosition(v, finalTargetRoot,parent);
                }
            };
 
@@ -146,7 +148,7 @@ public class BubbleView extends AppCompatTextView {
        });
     }
 
-    private void rePosition(View target,ViewGroup targetRoot){
+    private void rePosition(View target,ViewGroup targetRoot,ViewGroup parent){
         Rect offsetViewBound=new Rect();
         target.getDrawingRect(offsetViewBound);
         targetRoot.offsetDescendantRectToMyCoords(target,offsetViewBound);
@@ -162,9 +164,12 @@ public class BubbleView extends AppCompatTextView {
         mArrowStartPointX=tCenter-x;
         setPivotX(mArrowStartPointX);
         setPivotY(getMeasuredHeight());
-        //setTop(0);
+        if (parent==null){
+            setTop(0);
+            setLeft(0);
+        }
         setY(y);
-        //setLeft(0);
+
         setX(x);
     }
     public void hide(){
